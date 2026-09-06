@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-26
 
     steps:
       - name: Checkout code
@@ -13,18 +13,14 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Select Xcode 16.4
+      - name: Select Xcode 26.4.1
         run: |
-          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          sudo xcode-select -s /Applications/Xcode_26.4.1.app/Contents/Developer
           xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
 
       - name: Show project information
         run: |
-          echo "Xcode:"
-          xcodebuild -version
-
-          echo ""
-          echo "Available schemes:"
           xcodebuild \
             -project LiveContainer.xcodeproj \
             -list
@@ -44,9 +40,9 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             build
 
-      - name: Locate FlekDeck app
+      - name: Locate built application
         run: |
-          echo "Searching for built .app..."
+          echo "Searching for .app files..."
 
           find "$RUNNER_TEMP/FlekDeckBuild" \
             -type d \
@@ -63,14 +59,16 @@ jobs:
             | head -n 1)
 
           if [ -z "$APP_PATH" ]; then
-            echo "ERROR: Could not find the built .app"
+            echo "ERROR: No .app was found."
             echo ""
-            echo "Contents of Release-iphoneos:"
-            ls -la "$RUNNER_TEMP/FlekDeckBuild/Build/Products/Release-iphoneos" || true
+            echo "Release directory:"
+            ls -la \
+              "$RUNNER_TEMP/FlekDeckBuild/Build/Products/Release-iphoneos" \
+              || true
             exit 1
           fi
 
-          echo "Found app:"
+          echo "Found:"
           echo "$APP_PATH"
 
           rm -rf "$RUNNER_TEMP/Payload"
@@ -83,7 +81,9 @@ jobs:
           zip -r -q FlekDeck.ipa Payload
 
           echo ""
-          echo "IPA created:"
+          echo "================================="
+          echo "IPA CREATED SUCCESSFULLY"
+          echo "================================="
           ls -lh FlekDeck.ipa
 
       - name: Upload IPA
